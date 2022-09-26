@@ -1,6 +1,6 @@
 """
 Platform for exposing a Carrier Infinity Touch climate device through the
-Infinitude proxy application
+Infinitude2 proxy application
 """
 from homeassistant.components.climate import ClimateEntity, PLATFORM_SCHEMA
 from homeassistant.components.climate.const import (
@@ -102,8 +102,8 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     host = config.get(CONF_HOST)
     port = config.get(CONF_PORT)
 
-    infinitude = Infinitude(host, port)
-    status = infinitude.status()
+    infinitude2 = Infinitude2(host, port)
+    status = infinitude2.status()
 
     devices = []
 
@@ -119,7 +119,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
                 zone_name = name_override
         # Only create if the zone is enabled
         if zones[i]["enabled"][0] == "on":
-            devices.append(InfinitudeZone(infinitude, zones[i]["id"], zone_name))
+            devices.append(Infinitude2Zone(infinitude2, zones[i]["id"], zone_name))
     add_devices(devices)
 
     def service_set_hold_mode(service):
@@ -140,11 +140,11 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
         for zone in target_zones:
             zone.set_hold_mode(mode=mode, until=until, activity=activity)
 
-    hass.services.register("infinitude", "set_hold_mode", service_set_hold_mode)
+    hass.services.register("infinitude2", "set_hold_mode", service_set_hold_mode)
     return True
 
 
-class Infinitude:
+class Infinitude2:
     def __init__(self, host, port):
         self.host = host
         self.port = port
@@ -171,9 +171,9 @@ class Infinitude:
         return config["data"]
 
 
-class InfinitudeZone(ClimateEntity):
-    def __init__(self, infinitude, zone_id, zone_name_custom=None):
-        self.infinitude = infinitude
+class Infinitude2Zone(ClimateEntity):
+    def __init__(self, infinitude2, zone_id, zone_name_custom=None):
+        self.infinitude2 = infinitude2
         self.zone_id = zone_id
         self.zone_name_custom = zone_name_custom
 
@@ -209,7 +209,7 @@ class InfinitudeZone(ClimateEntity):
 
         # Needed for API calls that update Zones, which use a zero-based zone index
         # Assuming that Zones are always listed in ascending order of their "ID" attribute
-        # See https://github.com/nebulous/infinitude/issues/65#issuecomment-447971081
+        # See https://github.com/nebulous/infinitude2/issues/65#issuecomment-447971081
         self.zone_index = int(self.zone_id) - 1
 
         # Populate with initial values
@@ -230,7 +230,7 @@ class InfinitudeZone(ClimateEntity):
 
     def update(self):
         def get_safe(source, key, index=0, empty_dict_as_none=True):
-            """Helper function to safely parse JSON coming from Infinitude,
+            """Helper function to safely parse JSON coming from Infinitude2,
             where single values can be returned as lists"""
             result = None
             val = source.get(key, None)
@@ -246,11 +246,11 @@ class InfinitudeZone(ClimateEntity):
 
         # Retrieve full system status and config
         try:
-            self.system_status = self.infinitude.status()
-            self.system_config = self.infinitude.config()
+            self.system_status = self.infinitude2.status()
+            self.system_config = self.infinitude2.config()
         except URLError as e:
             _LOGGER.error(
-                "Unable to retrieve data from Infinitude: {}".format(e.reason)
+                "Unable to retrieve data from Infinitude2: {}".format(e.reason)
             )
             return
 
@@ -625,7 +625,7 @@ class InfinitudeZone(ClimateEntity):
 
         # Update the 'manual' activity with the updated temperatures
         # Enable hold until the next schedule change
-        self.infinitude.api(
+        self.infinitude2.api(
             "/api/config/zones/zone/{}/activities/activity/{}/".format(
                 self.zone_index, ACTIVITY_MANUAL_INDEX
             ),
@@ -646,7 +646,7 @@ class InfinitudeZone(ClimateEntity):
 
         # Update the 'manual' activity with the selected fan mode, preserving the current setbacks
         # Enable hold until the next schedule change
-        self.infinitude.api(
+        self.infinitude2.api(
             "/api/config/zones/zone/{}/activities/activity/{}/".format(
                 self.zone_index, ACTIVITY_MANUAL_INDEX
             ),
@@ -669,7 +669,7 @@ class InfinitudeZone(ClimateEntity):
         else:
             _LOGGER.error("Invalid HVAC mode: {}".format(hvac_mode))
             return
-        self.infinitude.api("/api/config", data)
+        self.infinitude2.api("/api/config", data)
 
     def set_swing_mode(self, swing_mode):
         """Set new target swing operation."""
@@ -783,4 +783,4 @@ class InfinitudeZone(ClimateEntity):
             _LOGGER.error("Invalid hold mode: {}".format(mode))
             return
 
-        self.infinitude.api("/api/config/zones/zone/{}/".format(self.zone_index), data)
+        self.infinitude2.api("/api/config/zones/zone/{}/".format(self.zone_index), data)

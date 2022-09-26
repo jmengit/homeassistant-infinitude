@@ -1,8 +1,8 @@
 set_hold_mode:
-  description: Sets the Hold Mode and Activity for an Infinitude zone
+  description: Sets the Hold Mode and Activity for an Infinitude2 zone
   fields:
     entity_id:
-      description: "Comma-separated list of Infinitude zone entity_ids to apply the hold to.  If not provided, all zones will be updated."
+      description: "Comma-separated list of Infinitude2 zone entity_ids to apply the hold to.  If not provided, all zones will be updated."
       example: "'climate.living_room', ['climate.living_room', 'climate.kitchen']"
     mode:
       description: "Name of the hold mode to apply.  If not provided, defaults to 'hold until'.  NOTE: 'hold until' expects an additional 'until' parameter to be provided."
